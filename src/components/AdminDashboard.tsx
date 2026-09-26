@@ -35,13 +35,10 @@ export default function AdminDashboard({ pages, onPagesChange }: AdminDashboardP
     const verifyAdmin = async () => {
       if (!supabase) { if (active) setAuthLoading(false); return; }
       try {
-        const sessionResult = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("AUTH_TIMEOUT")), 30000)),
-        ]);
+        const sessionResult = await withTimeout(supabase.auth.getSession(), 10000);
         const session = sessionResult.data.session;
         if (!session) return;
-        const { data: admin, error: adminError } = await supabase.rpc("is_admin");
+        const { data: admin, error: adminError } = await withTimeout(Promise.resolve(supabase.rpc("is_admin")), 15000);
         if (adminError || !admin) setError(adminError ? `تعذر التحقق من صلاحيات الأدمن: ${adminError.message}` : "هذا الحساب ليس ضمن مسؤولي النظام.");
         if (active) setAuthenticated(Boolean(admin) && !adminError);
       } catch (error) {
