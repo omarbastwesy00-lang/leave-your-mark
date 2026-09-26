@@ -103,7 +103,20 @@ function Profile({ person, whatsapp }: { person: MemorialPage; whatsapp: (number
       facebookButton.target = "_blank";
       facebookButton.rel = "noreferrer";
       facebookButton.setAttribute("aria-label", "حساب Facebook");
-      facebookButton.textContent = "f";
+      const facebookContainer = document.createElement("span");
+      facebookContainer.className = "svgContainer";
+      const facebookIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      facebookIcon.setAttribute("viewBox", "0 0 320 512");
+      facebookIcon.setAttribute("height", "1.3em");
+      facebookIcon.setAttribute("class", "svgIcon");
+      facebookIcon.setAttribute("fill", "white");
+      const facebookPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      facebookPath.setAttribute("d", "M80 299.3V512H196V299.3h86.5l18-97.8H196V166.9c0-51.7 20.3-71.5 72.7-71.5c16.3 0 29.4 .4 37 1.2V7.9C291.4 4 256.4 0 236.2 0C129.3 0 80 50.5 80 159.4v42.1H14v97.8H80z");
+      facebookIcon.appendChild(facebookPath);
+      facebookContainer.appendChild(facebookIcon);
+      const facebookBackground = document.createElement("span");
+      facebookBackground.className = "BG";
+      facebookButton.append(facebookContainer, facebookBackground);
       links.insertBefore(facebookButton, links.firstChild);
       createdButtons.push(facebookButton);
     }
@@ -114,7 +127,20 @@ function Profile({ person, whatsapp }: { person: MemorialPage; whatsapp: (number
       tiktokButton.target = "_blank";
       tiktokButton.rel = "noreferrer";
       tiktokButton.setAttribute("aria-label", "حساب TikTok");
-      tiktokButton.textContent = "♪";
+      const tiktokContainer = document.createElement("span");
+      tiktokContainer.className = "svgContainer";
+      const tiktokIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      tiktokIcon.setAttribute("viewBox", "0 0 24 24");
+      tiktokIcon.setAttribute("height", "1.3em");
+      tiktokIcon.setAttribute("class", "svgIcon");
+      tiktokIcon.setAttribute("fill", "white");
+      const tiktokPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      tiktokPath.setAttribute("d", "M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.59 3.16-5.91 3.23-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.27 1.79-.14.68-.05 1.45.31 2.07.57 1.03 1.78 1.67 2.94 1.52.77-.01 1.51-.39 2.03-.99.43-.5.66-1.16.67-1.82.02-3.39-.02-6.78-.02-10.17.01-.76-.03-1.51-.02-2.27Z");
+      tiktokIcon.appendChild(tiktokPath);
+      tiktokContainer.appendChild(tiktokIcon);
+      const tiktokBackground = document.createElement("span");
+      tiktokBackground.className = "BG";
+      tiktokButton.append(tiktokContainer, tiktokBackground);
       links.insertBefore(tiktokButton, links.firstChild);
       createdButtons.push(tiktokButton);
     }
