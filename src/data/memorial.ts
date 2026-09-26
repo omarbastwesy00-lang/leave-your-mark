@@ -1,5 +1,5 @@
 export type PredictionEra = "next" | "beforeTechnology";
-export type PageStatus = "available" | "pending" | "featured";
+export type PageStatus = "available" | "pending" | "reserved" | "featured";
 
 export interface MemorialPage {
   id: number;

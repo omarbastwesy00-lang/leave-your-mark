@@ -19,7 +19,7 @@ export async function getRemotePages(): Promise<MemorialPage[] | null> {
       id: participant.page_number,
       name: participant.name,
       image: participant.image_url ?? "",
-      status: participant.page_status === "pending" ? "pending" : "featured",
+      status: participant.page_status,
       city: "كفر الشيخ",
       bio: participant.future_message ?? "",
       prediction: participant.future_vision,
