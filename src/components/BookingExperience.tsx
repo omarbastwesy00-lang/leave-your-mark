@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { ArrowLeft, Check, Copy, ImagePlus, Sparkles, X } from "lucide-react";
 import { getPagePrice, saveBookings, type Booking } from "@/data/memorial";
 import { isSupabaseConfigured } from "@/lib/supabaseClient";
@@ -48,6 +48,7 @@ export default function BookingExperience({ onClose, page }: BookingExperiencePr
   const [submitError, setSubmitError] = useState("");
   const [copiedValue, setCopiedValue] = useState<string | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
+  const bookingModalRef = useRef<HTMLFormElement>(null);
 
   const selectedPageNumber = Number(form.page) || 1;
   const computedPrice = getPagePrice(selectedPageNumber);
@@ -83,6 +84,7 @@ export default function BookingExperience({ onClose, page }: BookingExperiencePr
     setSubmitError("");
     if (!validateFront()) return;
     setIsFlipped(true);
+    window.setTimeout(() => bookingModalRef.current?.scrollTo({ top: 0, behavior: "auto" }), 0);
   };
 
   const handleBack = () => {
@@ -186,7 +188,7 @@ export default function BookingExperience({ onClose, page }: BookingExperiencePr
           <button className="booking-submit" onClick={onClose}>العودة إلى الكتاب <ArrowLeft /></button>
         </section>
       ) : (
-        <form className="booking-modal simple-booking booking-flip-form" onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="booking-title" style={{ maxHeight: "85vh", overflowY: "auto" }}>
+        <form ref={bookingModalRef} className="booking-modal simple-booking booking-flip-form" onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="booking-title" style={{ maxHeight: "85vh", overflowY: "auto" }}>
           <button type="button" className="booking-close" onClick={onClose} aria-label="إغلاق"><X /></button>
           <span className="section-eyebrow"><Sparkles /> اترك بصمتك</span>
           <h2 id="booking-title">قبل أن نكتب اسمك…</h2>

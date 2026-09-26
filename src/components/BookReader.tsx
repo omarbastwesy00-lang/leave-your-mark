@@ -94,12 +94,14 @@ function Profile({ person, whatsapp }: { person: MemorialPage; whatsapp: (number
     const links = document.querySelector<HTMLElement>(".profile-links");
     if (!links) return;
     const instagramButton = links.querySelector<HTMLElement>(".Btn:first-child");
-    if (!person.instagram.trim()) instagramButton?.remove();
+    const missingAccount = (platform: string) => window.alert(`لم يضف هذا الشخص حساب ${platform}.`);
+    const instagramClick = (event: Event) => { if (!person.instagram.trim()) { event.preventDefault(); missingAccount("Instagram"); } };
+    instagramButton?.addEventListener("click", instagramClick);
     const createdButtons: HTMLElement[] = [];
-    if (person.facebook?.trim()) {
+    {
       const facebookButton = document.createElement("a");
       facebookButton.className = "Btn facebook-trigger";
-      facebookButton.href = facebookUrl(person.facebook);
+      facebookButton.href = person.facebook?.trim() ? facebookUrl(person.facebook) : "#";
       facebookButton.target = "_blank";
       facebookButton.rel = "noreferrer";
       facebookButton.setAttribute("aria-label", "حساب Facebook");
@@ -117,13 +119,15 @@ function Profile({ person, whatsapp }: { person: MemorialPage; whatsapp: (number
       const facebookBackground = document.createElement("span");
       facebookBackground.className = "BG";
       facebookButton.append(facebookContainer, facebookBackground);
+      const facebookClick = (event: Event) => { if (!person.facebook?.trim()) { event.preventDefault(); missingAccount("Facebook"); } };
+      facebookButton.addEventListener("click", facebookClick);
       links.insertBefore(facebookButton, links.firstChild);
       createdButtons.push(facebookButton);
     }
-    if (person.tiktok?.trim()) {
+    {
       const tiktokButton = document.createElement("a");
       tiktokButton.className = "Btn tiktok-trigger";
-      tiktokButton.href = tiktokUrl(person.tiktok);
+      tiktokButton.href = person.tiktok?.trim() ? tiktokUrl(person.tiktok) : "#";
       tiktokButton.target = "_blank";
       tiktokButton.rel = "noreferrer";
       tiktokButton.setAttribute("aria-label", "حساب TikTok");
@@ -141,10 +145,12 @@ function Profile({ person, whatsapp }: { person: MemorialPage; whatsapp: (number
       const tiktokBackground = document.createElement("span");
       tiktokBackground.className = "BG";
       tiktokButton.append(tiktokContainer, tiktokBackground);
+      const tiktokClick = (event: Event) => { if (!person.tiktok?.trim()) { event.preventDefault(); missingAccount("TikTok"); } };
+      tiktokButton.addEventListener("click", tiktokClick);
       links.insertBefore(tiktokButton, links.firstChild);
       createdButtons.push(tiktokButton);
     }
-    return () => createdButtons.forEach((button) => button.remove());
+    return () => { instagramButton?.removeEventListener("click", instagramClick); createdButtons.forEach((button) => button.remove()); };
   }, [person.id, person.facebook, person.instagram, person.tiktok]);
 
   useEffect(() => {

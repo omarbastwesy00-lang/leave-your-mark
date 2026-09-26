@@ -19,6 +19,7 @@ export default function AdminDashboard({ pages, onPagesChange }: AdminDashboardP
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
+  const [loginSubmitting, setLoginSubmitting] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"bookings" | "pages">("bookings");
@@ -67,16 +68,22 @@ export default function AdminDashboard({ pages, onPagesChange }: AdminDashboardP
   const login = async (event: FormEvent) => {
     event.preventDefault();
     if (!supabase || !isSupabaseConfigured) { setError("Supabase غير مهيأ."); return; }
+    if (loginSubmitting) return;
+    setLoginSubmitting(true);
     setError("");
+    let authStep = "تسجيل الدخول";
     try {
       const { error: loginError } = await withTimeout(supabase.auth.signInWithPassword({ email, password }), 30000);
       if (loginError) { setError("البريد الإلكتروني أو كلمة المرور غير صحيحة."); return; }
+      authStep = "التحقق من صلاحيات الأدمن";
       const { data: admin, error: adminError } = await withTimeout(Promise.resolve(supabase.rpc("is_admin")), 30000);
-      if (adminError || !admin) { await supabase.auth.signOut(); setError("هذا الحساب ليس ضمن مسؤولي النظام."); return; }
+      if (adminError || !admin) { await supabase.auth.signOut(); setError(adminError ? `تعذر فحص صلاحيات الأدمن: ${adminError.message}` : "بيانات الدخول صحيحة، لكن هذا الحساب غير مضاف كأدمن."); return; }
       setAuthenticated(true);
     } catch (error) {
       console.error("[Admin] Login request failed.", error);
-      setError(error instanceof Error && error.message === "REQUEST_TIMEOUT" ? "انتهت مهلة الاتصال بـ Supabase. حاول مرة أخرى." : "تعذر تسجيل الدخول بسبب خطأ في الاتصال.");
+      setError(error instanceof Error && error.message === "REQUEST_TIMEOUT" ? `انتهت مهلة ${authStep}. تحقق من الاتصال وحاول مرة أخرى.` : `تعذر ${authStep} بسبب خطأ في الاتصال.`);
+    } finally {
+      setLoginSubmitting(false);
     }
   };
   const approve = async (booking: Booking) => {
