@@ -41,12 +41,18 @@ export default function App() {
       }
       void refreshFromSupabase();
     };
+    const refreshAfterApproval = (event: Event) => {
+      const approvedPage = (event as CustomEvent<{ page?: MemorialPage }>).detail?.page;
+      if (approvedPage) setPages((current) => [...current.filter((page) => page.id !== approvedPage.id), approvedPage]);
+      void refreshFromSupabase();
+    };
 
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener(PAGES_UPDATED_EVENT, reloadPages);
     window.addEventListener("focus", refreshOnReturn);
     document.addEventListener("visibilitychange", refreshOnReturn);
     window.addEventListener("generation-2026-booking-created", refreshAfterBooking);
+    window.addEventListener("generation-2026-page-approved", refreshAfterApproval);
     void refreshFromSupabase();
     const unsubscribeRemote = subscribeToRemotePages(() => { console.log("[Book] pages Realtime event received."); void refreshFromSupabase(); }, () => { console.warn("[Book] pages Realtime connection issue; refetching."); void refreshFromSupabase(); });
     return () => {
@@ -55,6 +61,7 @@ export default function App() {
       window.removeEventListener("focus", refreshOnReturn);
       document.removeEventListener("visibilitychange", refreshOnReturn);
       window.removeEventListener("generation-2026-booking-created", refreshAfterBooking);
+      window.removeEventListener("generation-2026-page-approved", refreshAfterApproval);
       unsubscribeRemote();
     };
   }, []);

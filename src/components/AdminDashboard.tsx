@@ -58,7 +58,11 @@ export default function AdminDashboard({ pages, onPagesChange }: AdminDashboardP
       const result = await approveRemoteBooking(booking.id);
       if (result.error) { setError(`تعذر اعتماد الطلب: ${result.error.message}`); setApprovingId(null); return; }
       setBookings((current) => current.map((item) => item.id === booking.id ? { ...item, status: "approved" } : item));
-      if (booking.page) onPagesChange([...pages.filter((item) => item.id !== booking.page), { id: booking.page, name: booking.name, image: booking.image ?? "", status: "featured", city: "كفر الشيخ", bio: booking.questionFour, prediction: booking.prediction, visionChoice: booking.questionTwo, predictionEra: booking.predictionEra, instagram: booking.instagram, facebook: booking.facebook, tiktok: booking.tiktok, whatsapp: booking.whatsapp }]);
+      if (booking.page) {
+        const approvedPage: MemorialPage = { id: booking.page, name: booking.name, image: booking.image ?? "", status: "featured", city: "كفر الشيخ", bio: booking.questionFour, prediction: booking.prediction, visionChoice: booking.questionTwo, predictionEra: booking.predictionEra, instagram: booking.instagram, facebook: booking.facebook, tiktok: booking.tiktok, whatsapp: booking.whatsapp };
+        onPagesChange([...pages.filter((item) => item.id !== booking.page), approvedPage]);
+        window.dispatchEvent(new CustomEvent("generation-2026-page-approved", { detail: { page: approvedPage } }));
+      }
       setApprovingId(null);
       const currentRequest = ++requestId.current;
       void getRemoteBookings().then((remote) => { if (currentRequest === requestId.current) setBookings(remote); });
