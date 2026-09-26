@@ -10,6 +10,10 @@ type Draft = Omit<MemorialPage, "id">;
 const emptyPage: Draft = { name: "", image: "", status: "available", instagram: "", facebook: "", tiktok: "", whatsapp: "", city: "كفر الشيخ", bio: "", prediction: "", visionChoice: "", questionTwo: "", questionThree: "", questionFour: "", predictionEra: "next" };
 const statusLabels = { new: "جديد", contacted: "تم التواصل", approved: "تم الاعتماد", rejected: "مرفوض" };
 const eraLabels = { next: "العصر الحالي", beforeTechnology: "العصر الماضي" };
+const withTimeout = <T,>(promise: Promise<T>, milliseconds: number) => new Promise<T>((resolve, reject) => {
+  const timer = window.setTimeout(() => reject(new Error("REQUEST_TIMEOUT")), milliseconds);
+  promise.then((value) => { window.clearTimeout(timer); resolve(value); }, (error) => { window.clearTimeout(timer); reject(error); });
+});
 
 export default function AdminDashboard({ pages, onPagesChange }: AdminDashboardProps) {
   const [email, setEmail] = useState("");
@@ -30,10 +34,22 @@ export default function AdminDashboard({ pages, onPagesChange }: AdminDashboardP
     let active = true;
     const verifyAdmin = async () => {
       if (!supabase) { if (active) setAuthLoading(false); return; }
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { if (active) setAuthLoading(false); return; }
-      const { data: admin, error: adminError } = await supabase.rpc("is_admin");
-      if (active) { setAuthenticated(Boolean(admin) && !adminError); setAuthLoading(false); if (adminError || !admin) setError("هذا الحساب ليس ضمن مسؤولي النظام."); }
+      try {
+        const sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("AUTH_TIMEOUT")), 10000)),
+        ]);
+        const session = sessionResult.data.session;
+        if (!session) return;
+        const { data: admin, error: adminError } = await supabase.rpc("is_admin");
+        if (adminError || !admin) setError(adminError ? `تعذر التحقق من صلاحيات الأدمن: ${adminError.message}` : "هذا الحساب ليس ضمن مسؤولي النظام.");
+        if (active) setAuthenticated(Boolean(admin) && !adminError);
+      } catch (error) {
+        console.error("[Admin] Permission verification failed.", error);
+        if (active) setError("تعذر الاتصال بـ Supabase للتحقق من الصلاحيات. أعد المحاولة.");
+      } finally {
+        if (active) setAuthLoading(false);
+      }
     };
     void verifyAdmin();
     return () => { active = false; };
@@ -51,7 +67,21 @@ export default function AdminDashboard({ pages, onPagesChange }: AdminDashboardP
     return () => { active = false; unsubscribe(); window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); window.removeEventListener(BOOKINGS_UPDATED_EVENT, reloadLocal); };
   }, [authenticated]);
 
-  const login = async (event: FormEvent) => { event.preventDefault(); if (!supabase || !isSupabaseConfigured) { setError("Supabase غير مهيأ."); return; } setError(""); const { error: loginError } = await supabase.auth.signInWithPassword({ email, password }); if (loginError) { setError("البريد الإلكتروني أو كلمة المرور غير صحيحة."); return; } const { data: admin, error: adminError } = await supabase.rpc("is_admin"); if (adminError || !admin) { await supabase.auth.signOut(); setError("هذا الحساب ليس ضمن مسؤولي النظام."); return; } setAuthenticated(true); };
+  const login = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!supabase || !isSupabaseConfigured) { setError("Supabase غير مهيأ."); return; }
+    setError("");
+    try {
+      const { error: loginError } = await withTimeout(supabase.auth.signInWithPassword({ email, password }), 15000);
+      if (loginError) { setError("البريد الإلكتروني أو كلمة المرور غير صحيحة."); return; }
+      const { data: admin, error: adminError } = await withTimeout(Promise.resolve(supabase.rpc("is_admin")), 10000);
+      if (adminError || !admin) { await supabase.auth.signOut(); setError("هذا الحساب ليس ضمن مسؤولي النظام."); return; }
+      setAuthenticated(true);
+    } catch (error) {
+      console.error("[Admin] Login request failed.", error);
+      setError(error instanceof Error && error.message === "REQUEST_TIMEOUT" ? "انتهت مهلة الاتصال بـ Supabase. حاول مرة أخرى." : "تعذر تسجيل الدخول بسبب خطأ في الاتصال.");
+    }
+  };
   const approve = async (booking: Booking) => {
     setApprovingId(booking.id); setError("");
     if (isSupabaseConfigured) {

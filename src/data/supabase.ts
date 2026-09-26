@@ -12,7 +12,7 @@ function firstParticipant(value: SupabasePage["participant"]): SupabaseParticipa
 export async function getRemotePages(): Promise<MemorialPage[] | null> {
   if (!supabase) { console.warn("[Book] Supabase is not configured; pages cannot be fetched."); return null; }
   const { data, error } = await supabase.from("public_page_participants").select("page_number,page_status,name,city,image_url,instagram_username,facebook_url,tiktok_url,whatsapp,future_vision_choice,future_vision,future_message,prediction_era").order("page_number");
-  if (error || !data) { console.error("[Book] Failed to fetch public pages.", error); return null; }
+  if (error || !data) { console.error("[Book] Failed to fetch public pages. Verify schema.sql and security-hardening.sql were applied.", error); return null; }
   console.log("[Book] Public pages fetched.", { count: data.length, statuses: data.reduce<Record<string, number>>((summary, item) => { summary[item.page_status] = (summary[item.page_status] ?? 0) + 1; return summary; }, {}) });
   return (data as Array<SupabaseParticipant & { page_number: number; page_status: "pending" | "reserved" }>).map((participant) => {
     return [{

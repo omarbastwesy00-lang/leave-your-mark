@@ -15,6 +15,10 @@ const PAYMENT_OPTIONS: Record<PaymentMethod, { label: string; number: string; hi
 const PAYMENT_NUMBERS = ["01028870568", "01024659136"];
 const PAYMENT_NOTICE = "اختر طريقة الدفع المناسبة ثم أرسل المبلغ إلى الرقم التالي";
 const pageUrl = (pageNumber: number) => { const url = new URL(window.location.origin); url.searchParams.set("page", String(pageNumber)); return url.toString(); };
+const withTimeout = <T,>(promise: Promise<T>, milliseconds: number) => new Promise<T>((resolve, reject) => {
+  const timer = window.setTimeout(() => reject(new Error("REQUEST_TIMEOUT")), milliseconds);
+  promise.then((value) => { window.clearTimeout(timer); resolve(value); }, (error) => { window.clearTimeout(timer); reject(error); });
+});
 const ERA_OPTIONS = [
   { value: "next", label: "العصر الحالي" },
   { value: "beforeTechnology", label: "العصر الماضي" },
@@ -114,80 +118,49 @@ export default function BookingExperience({ onClose, page }: BookingExperiencePr
     event.preventDefault();
     setSubmitting(true);
     setSubmitError("");
+    try {
+      if (!validateFront()) { setIsFlipped(false); return; }
+      if (!validateBack()) { setIsFlipped(true); return; }
+      const selectedEra = form.predictionEra as Exclude<EraChoice, "">;
 
-    if (!validateFront()) {
-      setSubmitting(false);
-      setIsFlipped(false);
-      return;
-    }
+      if (isSupabaseConfigured) {
+        const { error } = await withTimeout(reservePage({
+          page: Number(form.page),
+          name: form.name,
+          city: "كفر الشيخ",
+          instagram: form.instagram,
+          facebook: form.facebook,
+          tiktok: form.tiktok,
+          whatsapp: form.whatsapp,
+          futureVision: form.questionThree,
+          futureMessage: form.questionFour,
+          imageUrl: form.image,
+          questionTwo: form.questionTwo,
+          predictionEra: selectedEra,
+          paymentSender: form.paymentSender,
+          paymentRecipient: form.paymentRecipient,
+          paymentMethod: form.paymentMethod,
+          pagePrice: computedPrice,
+        }), 15000);
 
-    if (!validateBack()) {
-      setSubmitting(false);
-      setIsFlipped(true);
-      return;
-    }
-
-    if (isSupabaseConfigured) {
-      const { error } = await reservePage({
-        page: Number(form.page),
-        name: form.name,
-        city: "كفر الشيخ",
-        instagram: form.instagram,
-        facebook: form.facebook,
-        tiktok: form.tiktok,
-        whatsapp: form.whatsapp,
-        futureVision: form.questionThree,
-        futureMessage: form.questionFour,
-        imageUrl: form.image,
-        questionTwo: form.questionTwo,
-        predictionEra: form.predictionEra,
-        paymentSender: form.paymentSender,
-        paymentRecipient: form.paymentRecipient,
-        paymentMethod: form.paymentMethod,
-        pagePrice: computedPrice,
-      });
-
-      if (error) {
-        const message = error.message;
-        setSubmitError(
-          message.includes("PAGE_NOT_AVAILABLE")
-            ? "هذه الصفحة محجوزة بالفعل. اختر صفحة أخرى."
-            : message.includes("function") || message.includes("schema cache")
-              ? "قاعدة البيانات تحتاج تشغيل آخر نسخة من schema.sql داخل Supabase SQL Editor."
-              : `تعذر حفظ الحجز: ${message}`
-        );
-        setSubmitting(false);
-        return;
+        if (error) {
+          const message = error.message;
+          setSubmitError(message.includes("PAGE_NOT_AVAILABLE") ? "هذه الصفحة محجوزة بالفعل. اختر صفحة أخرى." : message.includes("function") || message.includes("schema cache") ? "قاعدة البيانات تحتاج تشغيل آخر نسخة من schema.sql داخل Supabase SQL Editor." : `تعذر حفظ الحجز: ${message}`);
+          return;
+        }
+      } else {
+        const booking: Booking = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), status: "new", name: form.name, city: "كفر الشيخ", instagram: form.instagram, facebook: form.facebook, tiktok: form.tiktok, whatsapp: form.whatsapp, image: form.image, prediction: form.questionThree, questionTwo: form.questionTwo, questionThree: form.questionThree, questionFour: form.questionFour, predictionEra: selectedEra, page: Number(form.page), price: computedPrice, paymentSender: form.paymentSender, paymentRecipient: form.paymentRecipient, paymentMethod: form.paymentMethod };
+        saveBookings([booking, ...JSON.parse(localStorage.getItem("generation-2026-bookings") || "[]")]);
       }
-    } else {
-      const booking: Booking = {
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-        status: "new",
-        name: form.name,
-        city: "كفر الشيخ",
-        instagram: form.instagram,
-        facebook: form.facebook,
-        tiktok: form.tiktok,
-        whatsapp: form.whatsapp,
-        image: form.image,
-        prediction: form.questionThree,
-        questionTwo: form.questionTwo,
-        questionThree: form.questionThree,
-        questionFour: form.questionFour,
-        predictionEra: form.predictionEra,
-        page: Number(form.page),
-        price: computedPrice,
-        paymentSender: form.paymentSender,
-        paymentRecipient: form.paymentRecipient,
-        paymentMethod: form.paymentMethod,
-      };
-      saveBookings([booking, ...JSON.parse(localStorage.getItem("generation-2026-bookings") || "[]")]);
-    }
 
-    setSubmitted(true);
-    window.dispatchEvent(new CustomEvent("generation-2026-booking-created", { detail: { page: Number(form.page) } }));
-    setSubmitting(false);
+      setSubmitted(true);
+      window.dispatchEvent(new CustomEvent("generation-2026-booking-created", { detail: { page: Number(form.page) } }));
+    } catch (error) {
+      console.error("[Booking] Reservation request failed.", error);
+      setSubmitError(error instanceof Error && error.message === "REQUEST_TIMEOUT" ? "انتهت مهلة الاتصال بقاعدة البيانات. تحقق من الاتصال وحاول مرة أخرى." : "تعذر إرسال الحجز بسبب خطأ في الاتصال. حاول مرة أخرى.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const uploadImage = (event: ChangeEvent<HTMLInputElement>) => {
