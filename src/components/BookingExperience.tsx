@@ -141,7 +141,7 @@ export default function BookingExperience({ onClose, page }: BookingExperiencePr
           paymentRecipient: form.paymentRecipient,
           paymentMethod: form.paymentMethod,
           pagePrice: computedPrice,
-        }), 15000);
+        }), 30000);
 
         if (error) {
           const message = error.message;

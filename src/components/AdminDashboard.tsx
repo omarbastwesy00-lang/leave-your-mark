@@ -37,7 +37,7 @@ export default function AdminDashboard({ pages, onPagesChange }: AdminDashboardP
       try {
         const sessionResult = await Promise.race([
           supabase.auth.getSession(),
-          new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("AUTH_TIMEOUT")), 10000)),
+          new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("AUTH_TIMEOUT")), 30000)),
         ]);
         const session = sessionResult.data.session;
         if (!session) return;
@@ -72,9 +72,9 @@ export default function AdminDashboard({ pages, onPagesChange }: AdminDashboardP
     if (!supabase || !isSupabaseConfigured) { setError("Supabase غير مهيأ."); return; }
     setError("");
     try {
-      const { error: loginError } = await withTimeout(supabase.auth.signInWithPassword({ email, password }), 15000);
+      const { error: loginError } = await withTimeout(supabase.auth.signInWithPassword({ email, password }), 30000);
       if (loginError) { setError("البريد الإلكتروني أو كلمة المرور غير صحيحة."); return; }
-      const { data: admin, error: adminError } = await withTimeout(Promise.resolve(supabase.rpc("is_admin")), 10000);
+      const { data: admin, error: adminError } = await withTimeout(Promise.resolve(supabase.rpc("is_admin")), 30000);
       if (adminError || !admin) { await supabase.auth.signOut(); setError("هذا الحساب ليس ضمن مسؤولي النظام."); return; }
       setAuthenticated(true);
     } catch (error) {
