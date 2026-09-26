@@ -1,7 +1,7 @@
 import { supabase, supabaseConfigDebug } from "@/lib/supabaseClient";
 import type { Booking, MemorialPage } from "./memorial";
 
-interface SupabaseParticipant { name: string; city: string | null; image_url: string | null; instagram_username: string; whatsapp: string; future_vision_choice: string | null; future_vision: string; future_message: string | null; prediction_era: "next" | "beforeTechnology" | null; payment_sender: string | null; payment_recipient: string | null; }
+interface SupabaseParticipant { name: string; city: string | null; image_url: string | null; instagram_username: string; facebook_url: string | null; tiktok_url: string | null; whatsapp: string; future_vision_choice: string | null; future_vision: string; future_message: string | null; prediction_era: "next" | "beforeTechnology" | null; payment_sender: string | null; payment_recipient: string | null; }
 interface SupabasePage { page_number: number; status: "available" | "pending" | "reserved"; participant: SupabaseParticipant | SupabaseParticipant[] | null; }
 interface SupabaseBooking { id: string; page_number: number; page_price?: number | null; status: "pending" | "contacted" | "approved" | "rejected" | "cancelled"; created_at: string; participant: SupabaseParticipant | SupabaseParticipant[] | null; }
 
@@ -11,7 +11,7 @@ function firstParticipant(value: SupabasePage["participant"]): SupabaseParticipa
 
 export async function getRemotePages(): Promise<MemorialPage[] | null> {
   if (!supabase) { console.warn("[Book] Supabase is not configured; pages cannot be fetched."); return null; }
-  const { data, error } = await supabase.from("public_page_participants").select("page_number,page_status,name,city,image_url,instagram_username,whatsapp,future_vision_choice,future_vision,future_message,prediction_era").order("page_number");
+  const { data, error } = await supabase.from("public_page_participants").select("page_number,page_status,name,city,image_url,instagram_username,facebook_url,tiktok_url,whatsapp,future_vision_choice,future_vision,future_message,prediction_era").order("page_number");
   if (error || !data) { console.error("[Book] Failed to fetch public pages.", error); return null; }
   console.log("[Book] Public pages fetched.", { count: data.length, statuses: data.reduce<Record<string, number>>((summary, item) => { summary[item.page_status] = (summary[item.page_status] ?? 0) + 1; return summary; }, {}) });
   return (data as Array<SupabaseParticipant & { page_number: number; page_status: "pending" | "reserved" }>).map((participant) => {
@@ -20,7 +20,7 @@ export async function getRemotePages(): Promise<MemorialPage[] | null> {
       name: participant.name,
       image: participant.image_url ?? "",
       status: participant.page_status === "pending" ? "pending" : "featured",
-      city: participant.city ?? "",
+      city: "كفر الشيخ",
       bio: participant.future_message ?? "",
       prediction: participant.future_vision,
       visionChoice: participant.future_vision_choice ?? "",
@@ -29,12 +29,14 @@ export async function getRemotePages(): Promise<MemorialPage[] | null> {
       questionFour: participant.future_message ?? "",
       predictionEra: participant.prediction_era ?? "next",
       instagram: participant.instagram_username,
+      facebook: participant.facebook_url ?? "",
+      tiktok: participant.tiktok_url ?? "",
       whatsapp: participant.whatsapp,
     } satisfies MemorialPage];
   }).flat();
 }
 
-export interface ReservePageInput { page: number; name: string; city: string; instagram: string; whatsapp: string; futureVision: string; futureMessage?: string; imageUrl?: string; questionTwo?: string; predictionEra: "next" | "beforeTechnology"; paymentSender: string; paymentRecipient: string; paymentMethod?: "vodafone" | "instapay"; paymentReceipt?: string; pagePrice?: number; }
+export interface ReservePageInput { page: number; name: string; city: string; instagram: string; facebook?: string; tiktok?: string; whatsapp: string; futureVision: string; futureMessage?: string; imageUrl?: string; questionTwo?: string; predictionEra: "next" | "beforeTechnology"; paymentSender: string; paymentRecipient: string; paymentMethod?: "vodafone" | "instapay"; paymentReceipt?: string; pagePrice?: number; }
 
 export async function reservePage(input: ReservePageInput) {
   if (!supabase) return { data: null, error: new Error("Supabase is not configured") };
@@ -45,6 +47,8 @@ export async function reservePage(input: ReservePageInput) {
     p_name: input.name,
     p_city: input.city,
     p_instagram_username: input.instagram,
+    p_facebook_url: input.facebook ?? "",
+    p_tiktok_url: input.tiktok ?? "",
     p_whatsapp: input.whatsapp,
     p_future_vision: input.futureVision,
     p_future_message: input.futureMessage ?? null,
@@ -65,7 +69,7 @@ export async function getRemoteBookings(): Promise<Booking[]> {
   if (!supabase) { console.warn("[Admin] Supabase is not configured; bookings cannot be fetched."); return []; }
   const { data, error } = await supabase
     .from("bookings")
-    .select("id,page_number,page_price,status,created_at,participant:participants(name,city,image_url,instagram_username,whatsapp,future_vision_choice,future_vision,future_message,prediction_era,payment_sender,payment_recipient)")
+    .select("id,page_number,page_price,status,created_at,participant:participants(name,city,image_url,instagram_username,facebook_url,tiktok_url,whatsapp,future_vision_choice,future_vision,future_message,prediction_era,payment_sender,payment_recipient)")
     .order("created_at", { ascending: false });
   if (error || !data) { console.error("[Admin] Failed to fetch bookings.", { message: error?.message, code: error?.code, hint: error?.hint }); return []; }
   console.log("[Admin] Bookings fetched.", { count: data.length, statuses: data.reduce<Record<string, number>>((summary, item) => { summary[item.status] = (summary[item.status] ?? 0) + 1; return summary; }, {}) });
@@ -76,8 +80,10 @@ export async function getRemoteBookings(): Promise<Booking[]> {
       createdAt: booking.created_at,
       status: booking.status === "pending" ? "new" : booking.status === "cancelled" ? "rejected" : booking.status,
       name: participant?.name ?? "",
-      city: participant?.city ?? "",
+      city: "كفر الشيخ",
       instagram: participant?.instagram_username ?? "",
+      facebook: participant?.facebook_url ?? "",
+      tiktok: participant?.tiktok_url ?? "",
       whatsapp: participant?.whatsapp ?? "",
       prediction: participant?.future_vision ?? "",
       image: participant?.image_url ?? "",

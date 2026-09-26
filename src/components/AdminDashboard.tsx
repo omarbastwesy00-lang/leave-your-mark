@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 
 interface AdminDashboardProps { pages: MemorialPage[]; onPagesChange: (pages: MemorialPage[]) => void; }
 type Draft = Omit<MemorialPage, "id">;
-const emptyPage: Draft = { name: "", image: "", status: "available", instagram: "", whatsapp: "", city: "", bio: "", prediction: "", visionChoice: "", questionTwo: "", questionThree: "", questionFour: "", predictionEra: "next" };
+const emptyPage: Draft = { name: "", image: "", status: "available", instagram: "", facebook: "", tiktok: "", whatsapp: "", city: "كفر الشيخ", bio: "", prediction: "", visionChoice: "", questionTwo: "", questionThree: "", questionFour: "", predictionEra: "next" };
 const statusLabels = { new: "جديد", contacted: "تم التواصل", approved: "تم الاعتماد", rejected: "مرفوض" };
 const eraLabels = { next: "العصر الحالي", beforeTechnology: "العصر الماضي" };
 
@@ -58,7 +58,7 @@ export default function AdminDashboard({ pages, onPagesChange }: AdminDashboardP
       const result = await approveRemoteBooking(booking.id);
       if (result.error) { setError(`تعذر اعتماد الطلب: ${result.error.message}`); setApprovingId(null); return; }
       setBookings((current) => current.map((item) => item.id === booking.id ? { ...item, status: "approved" } : item));
-      if (booking.page) onPagesChange([...pages.filter((item) => item.id !== booking.page), { id: booking.page, name: booking.name, image: booking.image ?? "", status: "featured", city: booking.city, bio: booking.questionFour, prediction: booking.prediction, visionChoice: booking.questionTwo, predictionEra: booking.predictionEra, instagram: booking.instagram, whatsapp: booking.whatsapp }]);
+      if (booking.page) onPagesChange([...pages.filter((item) => item.id !== booking.page), { id: booking.page, name: booking.name, image: booking.image ?? "", status: "featured", city: "كفر الشيخ", bio: booking.questionFour, prediction: booking.prediction, visionChoice: booking.questionTwo, predictionEra: booking.predictionEra, instagram: booking.instagram, facebook: booking.facebook, tiktok: booking.tiktok, whatsapp: booking.whatsapp }]);
       setApprovingId(null);
       const currentRequest = ++requestId.current;
       void getRemoteBookings().then((remote) => { if (currentRequest === requestId.current) setBookings(remote); });
@@ -97,7 +97,7 @@ export default function AdminDashboard({ pages, onPagesChange }: AdminDashboardP
     }
   };
   const editPage = (page?: MemorialPage) => { setEditingId(page?.id ?? null); setDraft(page ? { ...page } : emptyPage); setOpen(true); };
-  const savePage = (event: FormEvent) => { event.preventDefault(); if (!draft.name.trim() || !draft.prediction?.trim()) return; const id = editingId ?? Math.max(0, ...pages.map((item) => item.id)) + 1; onPagesChange(editingId ? pages.map((item) => item.id === editingId ? { ...draft, id } : item) : [...pages, { ...draft, id }]); setOpen(false); };
+  const savePage = (event: FormEvent) => { event.preventDefault(); if (!draft.name.trim() || !draft.prediction?.trim()) return; const id = editingId ?? Math.max(0, ...pages.map((item) => item.id)) + 1; const fixedDraft = { ...draft, city: "كفر الشيخ" }; onPagesChange(editingId ? pages.map((item) => item.id === editingId ? { ...fixedDraft, id } : item) : [...pages, { ...fixedDraft, id }]); setOpen(false); };
   const removePage = async (id: number) => {
     if (!window.confirm("هل تريد حذف هذه الصفحة؟")) return;
     setDeletingId(`page-${id}`); setError("");

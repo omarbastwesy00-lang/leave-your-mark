@@ -29,6 +29,8 @@ create table if not exists public.participants (
   city text not null default '',
   image_url text,
   instagram_username text not null default '',
+  facebook_url text not null default '',
+  tiktok_url text not null default '',
   whatsapp text not null,
   future_vision_choice text not null default '',
   prediction_era text not null default 'next' check (prediction_era in ('next', 'beforeTechnology')),
@@ -46,6 +48,12 @@ alter table public.participants add column if not exists payment_sender text not
 alter table public.participants add column if not exists payment_recipient text not null default '';
 alter table public.participants add column if not exists payment_receipt text;
 alter table public.participants add column if not exists prediction_era text not null default 'next';
+alter table public.participants add column if not exists facebook_url text not null default '';
+alter table public.participants add column if not exists tiktok_url text not null default '';
+update public.participants set city = 'كفر الشيخ' where city is distinct from 'كفر الشيخ';
+alter table public.participants alter column city set default 'كفر الشيخ';
+alter table public.participants drop constraint if exists participants_city_kafr_sheikh_check;
+alter table public.participants add constraint participants_city_kafr_sheikh_check check (city = 'كفر الشيخ');
 
 create table if not exists public.bookings (
   id uuid primary key default gen_random_uuid(),
@@ -155,6 +163,8 @@ for each row execute function public.touch_updated_at();
 drop function if exists public.reserve_page(integer, text, text, text, text, text, text, text);
 drop function if exists public.reserve_page(integer, text, text, text, text, text, text, text, text, text, text, text);
 drop function if exists public.reserve_page(integer, text, text, text, text, text, text, text, text, text, text, text, text, integer);
+drop function if exists public.reserve_page(integer, text, text, text, text, text, text, text, text, text, text, text, text, integer, text);
+drop function if exists public.reserve_page(integer, text, text, text, text, text, text, text, text, text, text, text, text, integer, text, text);
 create or replace function public.reserve_page(
   p_page_number integer,
   p_name text,
@@ -169,7 +179,9 @@ create or replace function public.reserve_page(
   p_payment_recipient text default '',
   p_payment_receipt text default null,
   p_prediction_era text default 'next',
-  p_page_price integer default 0
+  p_page_price integer default 0,
+  p_facebook_url text default '',
+  p_tiktok_url text default ''
 )
 returns table (booking_id uuid, page_number integer, participant_id uuid)
 language plpgsql
@@ -203,8 +215,8 @@ begin
     raise exception 'PAGE_NOT_AVAILABLE' using errcode = '23505';
   end if;
 
-  insert into public.participants (name, city, image_url, instagram_username, whatsapp, future_vision_choice, future_vision, future_message, payment_sender, payment_recipient, payment_receipt, prediction_era)
-  values (trim(p_name), trim(coalesce(p_city, '')), trim(coalesce(p_image_url, '')), trim(coalesce(p_instagram_username, '')), trim(p_whatsapp), trim(coalesce(p_future_vision_choice, '')), trim(p_future_vision), nullif(trim(coalesce(p_future_message, '')), ''), trim(coalesce(p_payment_sender, '')), trim(coalesce(p_payment_recipient, '')), p_payment_receipt, case when p_prediction_era in ('next', 'beforeTechnology') then p_prediction_era else 'next' end)
+  insert into public.participants (name, city, image_url, instagram_username, facebook_url, tiktok_url, whatsapp, future_vision_choice, future_vision, future_message, payment_sender, payment_recipient, payment_receipt, prediction_era)
+  values (trim(p_name), 'كفر الشيخ', trim(coalesce(p_image_url, '')), trim(coalesce(p_instagram_username, '')), trim(coalesce(p_facebook_url, '')), trim(coalesce(p_tiktok_url, '')), trim(p_whatsapp), trim(coalesce(p_future_vision_choice, '')), trim(p_future_vision), nullif(trim(coalesce(p_future_message, '')), ''), trim(coalesce(p_payment_sender, '')), trim(coalesce(p_payment_recipient, '')), p_payment_receipt, case when p_prediction_era in ('next', 'beforeTechnology') then p_prediction_era else 'next' end)
   returning id into new_participant_id;
 
   insert into public.bookings (page_number, participant_id, status, page_price)
@@ -340,7 +352,7 @@ grant select on public.pages to anon, authenticated;
 grant select on public.participants to anon, authenticated;
 grant select on public.bookings to anon, authenticated;
 grant select on public.page_votes to anon, authenticated;
-grant execute on function public.reserve_page(integer, text, text, text, text, text, text, text, text, text, text, text, text) to anon, authenticated;
+grant execute on function public.reserve_page(integer, text, text, text, text, text, text, text, text, text, text, text, text, integer, text, text) to anon, authenticated;
 grant execute on function public.approve_booking(uuid) to anon, authenticated;
 grant execute on function public.delete_booking(uuid) to anon, authenticated;
 grant execute on function public.cast_page_vote(integer, text) to anon, authenticated;

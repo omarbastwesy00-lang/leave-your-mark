@@ -13,6 +13,9 @@ const FIRST_NAME_PAGE = 2;
 const BACK_COVER_PAGE = MEMORIAL_LIMIT + FIRST_NAME_PAGE;
 const FINAL_COVER_PAGE = BACK_COVER_PAGE + 1;
 const instagramUrl = (value: string) => value.trim().startsWith("http") ? value.trim() : `https://instagram.com/${value.trim().replace(/^@/, "")}`;
+const facebookUrl = (value: string) => value.trim().startsWith("http") ? value.trim() : `https://facebook.com/${value.trim().replace(/^@/, "")}`;
+const tiktokUrl = (value: string) => value.trim().startsWith("http") ? value.trim() : `https://tiktok.com/@${value.trim().replace(/^@/, "")}`;
+const pageUrl = (pageNumber: number) => { const url = new URL(window.location.origin); url.searchParams.set("page", String(pageNumber)); return url.toString(); };
 
 export default function BookReader({ pages: entries }: BookReaderProps) {
   const [page, setPage] = useState(0);
@@ -34,7 +37,7 @@ export default function BookReader({ pages: entries }: BookReaderProps) {
   const readerStatus = page === 0 ? "الغلاف" : page === INTRO_PAGE ? "المقدمة" : page === BACK_COVER_PAGE ? "الخاتمة" : page === FINAL_COVER_PAGE ? "غلاف النهاية" : `صفحة ${namePage.toLocaleString("ar-EG")} من ${MEMORIAL_LIMIT.toLocaleString("ar-EG")}`;
   const whatsapp = (number: string, name: string) => { const digits = number.replace(/\D/g, ""); const international = digits.startsWith("20") ? digits : digits.startsWith("0") ? `20${digits.slice(1)}` : `20${digits}`; return `https://wa.me/${international}?text=${encodeURIComponent(`أرغب في معرفة المزيد عن ${name} من كتاب جيل 2026`)}`; };
   const jumpToSearch = () => { const query = search.trim(); if (!query) { setSearchMessage("اكتب اسمًا أو رقم صفحة للبحث."); return; } const pageQuery = Number(query.replace(/[^0-9]/g, "")); const result = entries.find((entry) => entry.name.includes(query) || entry.instagram.toLowerCase().includes(query.toLowerCase())); if (pageQuery >= 1 && pageQuery <= MEMORIAL_LIMIT) { goTo(pageQuery + FIRST_NAME_PAGE - 1); setMenuOpen(false); return; } if (result) { goTo(result.id + FIRST_NAME_PAGE - 1); setMenuOpen(false); } else setSearchMessage("لم نعثر على صفحة بهذا الاسم بعد."); };
-  useEffect(() => { const query = Number(new URLSearchParams(window.location.search).get("page")); const internalQuery = query >= 2 && query <= MEMORIAL_LIMIT ? query + FIRST_NAME_PAGE - 1 : query; if (internalQuery >= 0 && internalQuery <= FINAL_COVER_PAGE) setPage(internalQuery); }, []);
+  useEffect(() => { const query = Number(new URLSearchParams(window.location.search).get("page")); const internalQuery = query >= 2 && query <= MEMORIAL_LIMIT ? query + FIRST_NAME_PAGE - 1 : query; if (internalQuery >= 0 && internalQuery <= FINAL_COVER_PAGE) { setPage(internalQuery); if (query >= 1 && query <= MEMORIAL_LIMIT) setEntered(true); } }, []);
   useEffect(() => { localStorage.setItem("memorial-last-page", String(page)); const publicPage = page >= FIRST_NAME_PAGE && page < BACK_COVER_PAGE ? namePage : page; const url = new URL(window.location.href); url.searchParams.set("page", String(publicPage)); window.history.replaceState({}, "", url); }, [page, namePage]);
   useEffect(() => { const refresh = () => refreshBookings((value) => value + 1); window.addEventListener("generation-2026-bookings-updated", refresh); window.addEventListener("storage", refresh); return () => { window.removeEventListener("generation-2026-bookings-updated", refresh); window.removeEventListener("storage", refresh); }; }, []);
   useEffect(() => { const onKey = (event: KeyboardEvent) => { if (event.key === "ArrowLeft") goTo(page + 1); if (event.key === "ArrowRight") goTo(page - 1); if (event.key === "Escape") { setMenuOpen(false); setBookingOpen(false); } }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); }, [page, goTo]);
@@ -51,14 +54,14 @@ export default function BookReader({ pages: entries }: BookReaderProps) {
 }
 
 function OwnershipItem({ icon, title, text }: { icon: ReactNode; title: string; text: string }) { return <article className="ownership-item"><span className="ownership-icon">{icon}</span><div><h3>{title}</h3><p>{text}</p></div></article>; }
-function FrontCover() { return <div className="front-cover"><div className="back-cover-seal"><Sparkles /></div><span>السجل الرسمي</span><h1>جيل 2026</h1><p>ألف صفحة، ألف صوت، وأثر واحد لا يتكرر.</p><small>إصدار 2026</small></div>; }
+function FrontCover() { return <div className="front-cover"><div className="back-cover-seal"><Sparkles /></div><span>السجل الرسمي</span><h1>جيل 2026</h1><span className="cover-location">(محافظة كفر الشيخ)</span><p>ألف صفحة، ألف صوت، وأثر واحد لا يتكرر.</p><small>إصدار 2026</small></div>; }
 function BookIntroduction() { return <div className="book-introduction"><div className="section-eyebrow"><BookOpen /> مقدمة الكتاب</div><h2>رسالة من جيلنا</h2><p>بعد سنوات طويلة من الآن، ستتغير أشياء كثيرة. ستتغير التكنولوجيا، والمدن، وطريقة العمل، وربما الطريقة التي نعيش ونتواصل بها.</p><p>لكن سيبقى سؤال واحد مهم: <strong>كيف كان يفكر الناس في عام 2026؟</strong> ماذا كانوا يحلمون؟ ما الذي كانوا يخافون منه؟ وما الذي كانوا يؤمنون بإمكانية حدوثه؟</p><p>لهذا وُلد كتاب جيل 2026. ليس ليجمع أسماءً فقط، بل ليحفظ صورة كاملة عن جيل عاش واحدة من أكثر اللحظات تغيرًا في التاريخ الحديث. كل صفحة شهادة على وجود شخص، وكل إجابة جزء من صورة أكبر تتكوّن مع مرور الوقت.</p><p>ربما يقرأ هذا الكتاب شخص بعد عشرين عامًا، فيبتسم أمام حلم تحقق، أو يندهش من فكرة أصبحت واقعًا، أو يتساءل كيف كنا نرى المستقبل ونحن نعيش بدايته.</p><strong>لهذا نحن لا نكتب للحاضر فقط.<br />نحن نترك شيئًا للمستقبل.</strong><p>ربما يأتي يوم يفتح فيه أحدهم هذا الكتاب، لا ليبحث عن اسم… بل ليعرف كيف كان جيل 2026 يرى العالم.</p></div>; }
 function BackCover() { return <div className="back-cover closing-page"><div className="back-cover-seal"><Sparkles /></div><span>خاتمة جيل 2026</span><h1>الأثر لا ينتهي هنا</h1><p>يظل هذا الكتاب محاولة واعية لالتقاط صورة حقيقية لجيل يعيش على حافة التحول. لن تكون هذه الصفحات مجرد سرد لأفكار عابرة، بل ستكون مرجعًا هادئًا لمن أراد يوماً أن يفهم كيف فكر إنسان 2026، وكيف واجه صراعاً مبكراً بين سرعة التقنية وحنينه الدائم إلى إنسانيته.</p><p>لقد حاولنا هنا أن نضع الأصبع على النبض الحقيقي للشارع والعقل البشري في هذه اللحظة من التاريخ. نترك هذا الأثر بين يدي القارئ، ليس لندعوه لشيء، بل لندعوه فقط أن يتأمل.. أين نقف الآن، وإلى أين نحن مقتبسون.</p><strong>يظل هذا الكتاب شهادة على لحظة كانت فيها التقنية أسرع من الإنسان، والإنسان أعمق من كل محرك.</strong><small>شكرًا لأنك كنت جزءًا من الحكاية.</small></div>; }
 function FinalCover() { return <div className="front-cover final-cover"><div className="back-cover-seal"><Sparkles /></div><span>غلاف النهاية</span><h1>جيل 2026</h1><p>كتابٌ يترك أثرًا في القلوب، ويصير جزءًا من ذاكرة جيلٍ اختار أن يبقى.</p><small>انتهى السجل الرسمي · نسخة 2026</small></div>; }
 
 function Profile({ person, whatsapp }: { person: MemorialPage; whatsapp: (number: string, name: string) => string }) {
   const instagram = instagramUrl(person.instagram);
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(instagram)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(pageUrl(person.id))}`;
   const [votes, setVotes] = useState({ agree: person.agreeVotes ?? 0, disagree: person.disagreeVotes ?? 0 });
   const [voted, setVoted] = useState<string | null>(null);
   const [isVoting, setIsVoting] = useState(false);
@@ -85,6 +88,77 @@ function Profile({ person, whatsapp }: { person: MemorialPage; whatsapp: (number
       active = false;
       unsubscribe();
     };
+  }, [person.id]);
+
+  useEffect(() => {
+    const links = document.querySelector<HTMLElement>(".profile-links");
+    if (!links) return;
+    const instagramButton = links.querySelector<HTMLElement>(".Btn:first-child");
+    if (!person.instagram.trim()) instagramButton?.remove();
+    const createdButtons: HTMLElement[] = [];
+    if (person.facebook?.trim()) {
+      const facebookButton = document.createElement("a");
+      facebookButton.className = "Btn facebook-trigger";
+      facebookButton.href = facebookUrl(person.facebook);
+      facebookButton.target = "_blank";
+      facebookButton.rel = "noreferrer";
+      facebookButton.setAttribute("aria-label", "حساب Facebook");
+      facebookButton.textContent = "f";
+      links.insertBefore(facebookButton, links.firstChild);
+      createdButtons.push(facebookButton);
+    }
+    if (person.tiktok?.trim()) {
+      const tiktokButton = document.createElement("a");
+      tiktokButton.className = "Btn tiktok-trigger";
+      tiktokButton.href = tiktokUrl(person.tiktok);
+      tiktokButton.target = "_blank";
+      tiktokButton.rel = "noreferrer";
+      tiktokButton.setAttribute("aria-label", "حساب TikTok");
+      tiktokButton.textContent = "♪";
+      links.insertBefore(tiktokButton, links.firstChild);
+      createdButtons.push(tiktokButton);
+    }
+    return () => createdButtons.forEach((button) => button.remove());
+  }, [person.id, person.facebook, person.instagram, person.tiktok]);
+
+  useEffect(() => {
+    const qrImage = document.querySelector<HTMLImageElement>(".profile-qr");
+    if (!qrImage) return;
+
+    const shareUrl = pageUrl(person.id);
+    const shareShell = document.createElement("div");
+    shareShell.className = "profile-share-shell";
+    const shareLink = document.createElement("a");
+    shareLink.href = shareUrl;
+    shareLink.target = "_blank";
+    shareLink.rel = "noreferrer";
+    shareLink.textContent = shareUrl;
+    const copyButton = document.createElement("button");
+    copyButton.type = "button";
+    copyButton.textContent = "نسخ الرابط";
+    copyButton.addEventListener("click", async () => {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(shareUrl);
+        } else {
+          const textArea = document.createElement("textarea");
+          textArea.value = shareUrl;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-9999px";
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand("copy");
+          textArea.remove();
+        }
+        copyButton.textContent = "تم النسخ";
+        window.setTimeout(() => { copyButton.textContent = "نسخ الرابط"; }, 1200);
+      } catch {
+        copyButton.textContent = "تعذر النسخ";
+      }
+    });
+    shareShell.append(shareLink, copyButton);
+    qrImage.replaceWith(shareShell);
+    return () => shareShell.replaceWith(qrImage);
   }, [person.id]);
 
   const vote = async (choice: "agree" | "disagree") => {

@@ -52,6 +52,8 @@ select
   p.city,
   p.image_url,
   p.instagram_username,
+  p.facebook_url,
+  p.tiktok_url,
   p.whatsapp,
   p.future_vision_choice,
   p.prediction_era,
@@ -92,8 +94,8 @@ grant select on public.bookings to authenticated;
 grant select on public.participants to authenticated;
 
 -- The public client may create a booking only through the atomic function.
-revoke all on function public.reserve_page(integer, text, text, text, text, text, text, text, text, text, text, text, text, integer) from public, anon, authenticated;
-grant execute on function public.reserve_page(integer, text, text, text, text, text, text, text, text, text, text, text, text, integer) to anon, authenticated;
+revoke all on function public.reserve_page(integer, text, text, text, text, text, text, text, text, text, text, text, text, integer, text, text) from public, anon, authenticated;
+grant execute on function public.reserve_page(integer, text, text, text, text, text, text, text, text, text, text, text, text, integer, text, text) to anon, authenticated;
 
 -- Administrative mutations are Auth/Admin-only. The anon role cannot call them.
 revoke all on function public.approve_booking(uuid) from public, anon, authenticated;

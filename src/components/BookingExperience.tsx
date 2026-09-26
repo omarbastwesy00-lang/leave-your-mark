@@ -7,13 +7,14 @@ import { reservePage } from "@/data/supabase";
 interface BookingExperienceProps { onClose: () => void; page?: number; }
 type EraChoice = "next" | "beforeTechnology" | "";
 type PaymentMethod = "vodafone" | "instapay";
-interface FormData { page: string; name: string; city: string; instagram: string; whatsapp: string; image: string; questionTwo: string; questionThree: string; questionFour: string; predictionEra: EraChoice; paymentSender: string; paymentRecipient: string; paymentMethod: PaymentMethod; }
+interface FormData { page: string; name: string; instagram: string; facebook: string; tiktok: string; whatsapp: string; image: string; questionTwo: string; questionThree: string; questionFour: string; predictionEra: EraChoice; paymentSender: string; paymentRecipient: string; paymentMethod: PaymentMethod; }
 const PAYMENT_OPTIONS: Record<PaymentMethod, { label: string; number: string; hint: string }> = {
   vodafone: { label: "فودافون كاش", number: "01028870568", hint: "الدفع عبر فودافون كاش" },
   instapay: { label: "إنستا باي", number: "01028870568", hint: "الدفع عبر إنستا باي" },
 };
 const PAYMENT_NUMBERS = ["01028870568", "01024659136"];
 const PAYMENT_NOTICE = "اختر طريقة الدفع المناسبة ثم أرسل المبلغ إلى الرقم التالي";
+const pageUrl = (pageNumber: number) => { const url = new URL(window.location.origin); url.searchParams.set("page", String(pageNumber)); return url.toString(); };
 const ERA_OPTIONS = [
   { value: "next", label: "العصر الحالي" },
   { value: "beforeTechnology", label: "العصر الماضي" },
@@ -34,7 +35,7 @@ const TECHNOLOGY_OPTIONS = [
   "التكنولوجيا تفيد البشرية.",
   "التكنولوجيا ستضمر البشرية.",
 ];
-const initialForm: FormData = { page: "", name: "", city: "", instagram: "", whatsapp: "", image: "", questionTwo: "", questionThree: "", questionFour: "", predictionEra: "", paymentSender: "", paymentRecipient: "", paymentMethod: "instapay" };
+const initialForm: FormData = { page: "", name: "", instagram: "", facebook: "", tiktok: "", whatsapp: "", image: "", questionTwo: "", questionThree: "", questionFour: "", predictionEra: "", paymentSender: "", paymentRecipient: "", paymentMethod: "instapay" };
 
 export default function BookingExperience({ onClose, page }: BookingExperienceProps) {
   const [form, setForm] = useState<FormData>({ ...initialForm, page: page ? String(page) : "" });
@@ -55,8 +56,8 @@ export default function BookingExperience({ onClose, page }: BookingExperiencePr
       setSubmitError("اسم العميل يجب أن يكون ثنائيًا فقط: الاسم الأول + اسم العائلة.");
       return false;
     }
-    if (!form.page || !form.city.trim() || !form.name.trim() || !form.instagram.trim() || !form.whatsapp.trim() || !form.image) {
-      setSubmitError("أكمل رقم الصفحة، المدينة، الاسم، حساب Instagram، واتساب، وصورة الشخص قبل المتابعة.");
+    if (!form.page || !form.name.trim() || !form.whatsapp.trim() || !form.image) {
+      setSubmitError("أكمل رقم الصفحة، الاسم، واتساب، وصورة الشخص قبل المتابعة.");
       return false;
     }
     if (!form.predictionEra || !form.questionTwo.trim() || !form.questionThree.trim() || !form.questionFour.trim()) {
@@ -130,8 +131,10 @@ export default function BookingExperience({ onClose, page }: BookingExperiencePr
       const { error } = await reservePage({
         page: Number(form.page),
         name: form.name,
-        city: form.city,
+        city: "كفر الشيخ",
         instagram: form.instagram,
+        facebook: form.facebook,
+        tiktok: form.tiktok,
         whatsapp: form.whatsapp,
         futureVision: form.questionThree,
         futureMessage: form.questionFour,
@@ -162,8 +165,10 @@ export default function BookingExperience({ onClose, page }: BookingExperiencePr
         createdAt: new Date().toISOString(),
         status: "new",
         name: form.name,
-        city: form.city,
+        city: "كفر الشيخ",
         instagram: form.instagram,
+        facebook: form.facebook,
+        tiktok: form.tiktok,
         whatsapp: form.whatsapp,
         image: form.image,
         prediction: form.questionThree,
@@ -232,11 +237,6 @@ export default function BookingExperience({ onClose, page }: BookingExperiencePr
                       <label>رقم الصفحة<input required type="number" min="1" max="1000" value={form.page} onChange={(event) => update("page", event.target.value)} /></label>
                     )}
 
-                    <label>
-                      المدينة
-                      <input required value={form.city} onChange={(event) => update("city", event.target.value)} />
-                    </label>
-
                     <label className="full-width">
                       الاسم كما سيظهر في الكتاب
                       <small className="field-help">الاسم يجب أن يكون ثنائيًا فقط: الاسم الأول + اسم العائلة.</small>
@@ -245,7 +245,20 @@ export default function BookingExperience({ onClose, page }: BookingExperiencePr
 
                     <label>
                       اسم المستخدم على إنستجرام
+                      <small className="field-help">اختياري</small>
                       <input placeholder="مثال: generation2026" value={form.instagram} onChange={(event) => update("instagram", event.target.value.replace(/^@/, ""))} />
+                    </label>
+
+                    <label>
+                      رابط Facebook
+                      <small className="field-help">اختياري</small>
+                      <input type="url" placeholder="https://facebook.com/..." value={form.facebook} onChange={(event) => update("facebook", event.target.value)} />
+                    </label>
+
+                    <label>
+                      رابط TikTok
+                      <small className="field-help">اختياري</small>
+                      <input type="url" placeholder="https://tiktok.com/@..." value={form.tiktok} onChange={(event) => update("tiktok", event.target.value)} />
                     </label>
 
                     <label>

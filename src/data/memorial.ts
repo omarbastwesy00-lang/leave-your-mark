@@ -15,6 +15,8 @@ export interface MemorialPage {
   questionFour?: string;
   predictionEra?: PredictionEra;
   instagram: string;
+  facebook?: string;
+  tiktok?: string;
   whatsapp: string;
   agreeVotes?: number;
   disagreeVotes?: number;
@@ -40,6 +42,8 @@ export interface Booking {
   name: string;
   city: string;
   instagram: string;
+  facebook?: string;
+  tiktok?: string;
   whatsapp: string;
   predictionEra: PredictionEra;
   prediction: string;
